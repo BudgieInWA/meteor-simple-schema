@@ -4,6 +4,17 @@
 /* global MongoObject */
 /* global doValidation1:true */
 
+function calculateRequired(optional) {
+  if (_.isBoolean(optional)) {
+    return !optional;
+  }
+  if (_.isFunction(optional)) {
+    return !optional(); // TODO(BudgieInWA): Pass in some context.
+  }
+  // Default
+  return true;
+}
+
 function doTypeChecks(def, keyValue, op) {
   var expectedType = def.type;
 
@@ -116,6 +127,8 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       return;
     }
 
+    var required = calculateRequired(def.optional);
+
     // Check for missing required values. The general logic is this:
     // * If the operator is $unset or $rename, it's invalid.
     // * If the value is null, it's invalid.
@@ -124,7 +137,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     //     * We're validating a key of an object that is an array item.
     //     * We're validating a document (as opposed to a modifier).
     //     * We're validating a key under the $set operator in a modifier, and it's an upsert.
-    if (!skipRequiredCheck && !def.optional) {
+    if (!skipRequiredCheck && required) {
       if (
         val === null ||
         op === "$unset" ||
@@ -231,7 +244,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     // Temporarily convert missing objects to empty objects
     // so that the looping code will be called and required
     // descendent keys can be validated.
-    if ((val === void 0 || val === null) && (!def || (def.type === Object && !def.optional))) {
+    if ((val === void 0 || val === null) && (!def || (def.type === Object && calculateRequired(def.optional)))) {
       val = {};
     }
 
