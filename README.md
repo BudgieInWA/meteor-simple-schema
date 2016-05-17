@@ -338,6 +338,24 @@ a usable string. This method is reactive.
 
 By default, all keys are required. Set `optional: true` to change that.
 
+Alternatively, you may provide a function instead to make the field
+conditionally optional. The function will be called each time the field is
+validated and must return a boolean value to indicate if the field should be
+considered options. The `this` context for the function is the same as that
+for a custom validation function as described in [custom validation section]
+(#custom-validation).
+
+```js
+MySchema = new SimpleSchema({
+  myField: {
+    type: String,
+    optional: function () {
+      return this.field("otherField").value === 'x';
+    }
+  }
+});
+```
+
 With complex keys, it might be difficult to understand what "required" means.
 Here's a brief explanation of how requiredness is interpreted:
 
@@ -894,42 +912,6 @@ and [AutoForm](https://github.com/aldeed/meteor-autoform) packages.
 Take a look at their documentation.
 
 ## Best Practice Code Examples
-
-### Make a field conditionally required
-
-If you have a field that should be required only in certain circumstances, first make the field
-optional, and then use a custom function similar to this:
-
-```js
-{
-  field: {
-    type: String,
-    optional: true,
-    custom: function () {
-      var shouldBeRequired = this.field('saleType').value == 1;
-
-      if (shouldBeRequired) {
-        // inserts
-        if (!this.operator) {
-          if (!this.isSet || this.value === null || this.value === "") return "required";
-        }
-
-        // updates
-        else if (this.isSet) {
-          if (this.operator === "$set" && this.value === null || this.value === "") return "required";
-          if (this.operator === "$unset") return "required";
-          if (this.operator === "$rename") return "required";
-        }
-      }
-    }
-  }
-}
-```
-
-Where `customCondition` is whatever should trigger it being required.
-
-Note: In the future we could make this a bit simpler by allowing `optional` to be a function that returns
-true or false. Pull request welcome.
 
 ### Validate one key against another
 
